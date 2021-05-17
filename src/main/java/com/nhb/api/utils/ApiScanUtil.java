@@ -71,7 +71,6 @@ public class ApiScanUtil {
                         while (jarEntryEnumeration.hasMoreElements()) {
                             JarEntry jarEntry = jarEntryEnumeration.nextElement();
                             String jarEntryName = jarEntry.getName();
-                            logger.debug("获取到jarEntry:{}", jarEntryName);
                             if (jarEntryName.charAt(0) == '/') {
                                 jarEntryName = jarEntryName.substring(1);
                             }
@@ -97,7 +96,6 @@ public class ApiScanUtil {
                         break;
                 }
             }
-            logger.debug("扫描到路径:{}", classPackages);
         } catch (Exception e) {
             logger.error("扫描包路径发生异常:{}", e.getMessage());
         }

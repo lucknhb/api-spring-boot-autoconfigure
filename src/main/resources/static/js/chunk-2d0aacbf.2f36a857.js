@@ -1,1 +1,0 @@
-(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0aacbf"],{1318:function(e){e.exports=JSON.parse('{"title":"请求参数","type":"array","items":{"type":"object","properties":{"apiLabel":{"type":"string"},"description":{"type":"string"},"paramName":{"type":"string"},"paramType":{"type":"string"},"children":{"type":"array"}}}}')}}]);
