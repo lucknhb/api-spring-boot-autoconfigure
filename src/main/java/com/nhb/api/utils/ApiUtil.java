@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author luck_nhb
@@ -26,6 +27,9 @@ public class ApiUtil {
 
     //封装基本类型和参数类型的对应关心
     private static final Map<Class, String> typeMap = new HashMap<>();
+
+    //用于自身依赖计数
+    private static AtomicInteger count = new AtomicInteger(0);
 
     //初始化
     static {
@@ -94,7 +98,6 @@ public class ApiUtil {
     }
 
 
-
     /**
      * 获取此方法的请求方式
      *
@@ -141,7 +144,7 @@ public class ApiUtil {
                         requestType = HttpRequestType.GET;
                         if (containsPathVariableAnnotation(method.getParameterAnnotations())) {
                             apiDetailMessage.setRequestFormat(RequestFormat.RESTFUL);
-                        }else {
+                        } else {
                             apiDetailMessage.setRequestFormat(RequestFormat.URL);
                         }
                         break;
@@ -180,9 +183,9 @@ public class ApiUtil {
     private static void setPutOrPostRequestFormat(ApiDetailMessage apiDetailMessage, Method method) {
         if (containsPathVariableAnnotation(method.getParameterAnnotations())) {
             apiDetailMessage.setRequestFormat(RequestFormat.RESTFUL);
-        } else if (containsRequestBodyAnnotation(method.getParameterAnnotations())){
+        } else if (containsRequestBodyAnnotation(method.getParameterAnnotations())) {
             apiDetailMessage.setRequestFormat(RequestFormat.JSON);
-        }else {
+        } else {
             apiDetailMessage.setRequestFormat(RequestFormat.FORM);
         }
     }
@@ -274,7 +277,7 @@ public class ApiUtil {
             //方法中参数ApiLabel 描述
             requestParam.setDescription(AnnotationUtil.getApiLabelDescriptionForParam(parameterAnnotation));
             //方法中参数ApiLabel 值
-            requestParam.setApiLabel(AnnotationUtil.getApiLabelValueForParam(parameter,parameterAnnotation));
+            requestParam.setApiLabel(AnnotationUtil.getApiLabelValueForParam(parameter, parameterAnnotation));
         } else if (paramName != null) {
             requestParam.setParamName(paramName);
         } else { //自定义类的参数名
@@ -336,6 +339,13 @@ public class ApiUtil {
             //static的final修饰的字段
             List<Field> fieldList = removeStaticAndFinal(fields);
             for (Field field : fieldList) {
+                if (field.getDeclaringClass().getName().equals(type.getName())) {
+                    if (count.get() > 2) {
+                        count.set(0);
+                        continue;
+                    }
+                    count.addAndGet(1);
+                }
                 Class<?> fieldType = field.getType();
                 //自定义类型中可能存在集合泛型
                 Type genericType = field.getGenericType();
@@ -345,7 +355,7 @@ public class ApiUtil {
         //数组
         if (type.isArray()) {
             Class<?> componentType = type.getComponentType();
-            requestParam.setParamType(String.format(DataType.ARRAY,componentType.getSimpleName()));
+            requestParam.setParamType(String.format(DataType.ARRAY, componentType.getSimpleName()));
             requestParams.add(requestParam);
             //多维数组处理
             List<Param> tempParams = new ArrayList<>();
@@ -417,14 +427,15 @@ public class ApiUtil {
 
     /**
      * 解析获取响应参数
+     *
      * @param selfMethod
      * @return
      */
     public static List<Param> parseResponseParams(Method selfMethod) {
         Type returnType = selfMethod.getGenericReturnType();
         List<Param> responseParams = new ArrayList<>();
-        generateParamAndType(responseParams,null,selfMethod.getReturnType(),returnType,
-                null,null,null);
+        generateParamAndType(responseParams, null, selfMethod.getReturnType(), returnType,
+                null, null, null);
         return responseParams;
     }
 }
